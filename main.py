@@ -1,9 +1,13 @@
+import sys
+
 from playwright.sync_api import sync_playwright
 from morningbrew_article_links_gatherer import gather_website_links, HEADLESS_VALUE, TIMEOUT_LIMIT
 import concurrent
 from playwright_stealth import stealth_sync
 from multiprocessing import cpu_count
 import time
+from pymongo import MongoClient
+import mongodb_repository
 #Threads for IO Bound, Processes  for CPU bound
 #Can change ProcessPoolExecutor() to ThreadPoolExecutor() and the program will run the same, but utilize threads!
 
@@ -16,19 +20,18 @@ WORKER_LIMIT = 3
 CHECK_LIMIT_WORKERS = True
 
 def extract_article_data(url):
-    print("working on: " + url)
+    print("Extracting data from: " + url)
     with sync_playwright() as p:
         browser = None
         # Raise a working browser
         for i in range(4):
             try:
                 if i==0:
-                    browser = p.webkit.launch(executable_path="C:/Users/avivo/AppData/Local/ms-playwright/webkit-1992/playwright.exe", headless=HEADLESS_VALUE)
-                elif i==1:
-                    browser = p.chromium.launch(executable_path="C:/Users/avivo/AppData/Local/ms-playwright/chromium-1112/chrome-win/chrome.exe", headless=HEADLESS_VALUE)
-                elif i==2:
                     browser = p.firefox.launch(executable_path="C:/Users/avivo/AppData/Local/ms-playwright/firefox-1447/firefox/firefox.exe", headless=HEADLESS_VALUE)
-
+                #elif i==1:
+                    #browser = p.chromium.launch(executable_path="C:/Users/avivo/AppData/Local/ms-playwright/chromium-1112/chrome-win/chrome.exe", headless=HEADLESS_VALUE)
+                #elif i==2:
+                    #browser = p.webkit.launch(executable_path="C:/Users/avivo/AppData/Local/ms-playwright/webkit-1992/playwright.exe", headless=HEADLESS_VALUE)
                 else:
                     exit("Can't load the website... Darn Anti-Bot verification process!")
                 # Set up a new broswer page
@@ -38,7 +41,7 @@ def extract_article_data(url):
                 # parse the new page url
                 page.goto(url)
                 # Make sure the page has loaded, otherwise try another browser
-                page.wait_for_selector('div.kUWhMO', timeout=TIMEOUT_LIMIT)
+                page.wait_for_selector('div.kQHUvl', timeout=TIMEOUT_LIMIT)
                 break
             except:
                 if i <= 2:
@@ -46,22 +49,21 @@ def extract_article_data(url):
                 continue
         if browser == None:
             return ["Error - Browser didn't arise."]
-        paragraphs = page.query_selector_all('div.kUWhMO p')
+        paragraphs = page.query_selector_all('div.kQHUvl p')
         data = []
         for paragraph in paragraphs:
             paragraph_text = paragraph.evaluate('(element) => element.textContent')
             data.append(paragraph_text)
-        return data[1:]
+        return [url, data[1:]]
 
 
 def main():
-
     global ARTICLE_LINKS
     ARTICLE_LINKS = gather_website_links()  # Assuming gather_website_links returns a list of URLs
     #think of using docker
 
     global WORKER_LIMIT
-    print(CHECK_LIMIT_WORKERS)
+    #print(CHECK_LIMIT_WORKERS)
     if not CHECK_LIMIT_WORKERS:
         WORKER_LIMIT = cpu_count()
 
@@ -70,10 +72,21 @@ def main():
         article_data = executor.map(extract_article_data, ARTICLE_LINKS)
     end = time.perf_counter()
 
+    print("Extracted data:\n")
+    article_map = {}
     for article in article_data:
-        print(article)
+        article_url, article_data = article[0], article[1]
+        if article_data and article_data[0]:
+            article_map[article_url] = article_data
+        else:
+            print(article_url)
 
-    print(f'Seconds To fulfill the data extraction: {end - start}')
+    print(f'Seconds To fulfill the data extraction: {(end - start)/2}\n')
+
+    print("Inserting data into mongodb:\n")
+    mongodb_repository.start_mongodb()
+    mongodb_repository.upload_articles_to_mongodb(article_map)
+
 
 
 
