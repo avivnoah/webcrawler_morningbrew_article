@@ -1,5 +1,6 @@
 # webcrawler_morningbrew
-![DALL·E 2024-10-18 16 19 06 - A highly professional and clean digital illustration of a webcrawler, represented as a simple robot or software bot icon, extracting articles from a w  MConverter eu](https://github.com/user-attachments/assets/ca985ec1-9dfa-4db6-88a9-1ff6d255bf03)
+https://github.com/user-attachments/assets/e76e805e-3f12-44fc-8bd5-1f7b21a02fae
+
 
 Implemented a webcrawler using Playwright to scan webpage URLs and extract data, Progressively optimized data acquisition, improving speed and efficiency.
 
