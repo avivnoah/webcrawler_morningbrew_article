@@ -4,7 +4,6 @@ import concurrent
 from playwright_stealth import stealth_sync
 from multiprocessing import cpu_count
 import time
-
 #Threads for IO Bound, Processes  for CPU bound
 #Can change ProcessPoolExecutor() to ThreadPoolExecutor() and the program will run the same, but utilize threads!
 

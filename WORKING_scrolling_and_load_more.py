@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
 import time
+
 def main():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
@@ -16,7 +17,6 @@ def main():
 
             # Find the button using a CSS selector
             button = page.locator('//button[contains(concat( " ", @class, " " ), concat( " ", "css-1gm9mkh", " " ))]')
-
 
 
             # Alternatively, you can use an XPath expression
